@@ -19,25 +19,39 @@ export async function createShortLink(
   preview: PreviewData,
   customSlug?: string
 ): Promise<string> {
-  let slug = customSlug || nanoid(8);
+  try {
+    let slug = customSlug || nanoid(8);
 
-  if (customSlug) {
-    const exists = await redis.exists(`link:${slug}`);
-    if (exists) throw new Error('Slug already taken');
-  } else {
-    while (await redis.exists(`link:${slug}`)) {
-      slug = nanoid(8);
+    if (customSlug) {
+      const exists = await redis.exists(`link:${slug}`);
+      if (exists) throw new Error('Slug already taken');
+    } else {
+      while (await redis.exists(`link:${slug}`)) {
+        slug = nanoid(8);
+      }
     }
+
+    const data: LinkData = { realUrl, preview };
+    await redis.set(`link:${slug}`, JSON.stringify(data), { ex: 60 * 60 * 24 * 365 });
+
+    console.log('✅ Redis mein save ho gaya:', slug);
+    return slug;
+  } catch (err: any) {
+    console.error('❌ Redis Error in createShortLink:', err.message);
+    throw err;
   }
-
-  const data: LinkData = { realUrl, preview };
-  await redis.set(`link:${slug}`, JSON.stringify(data), { ex: 60 * 60 * 24 * 365 });
-
-  return slug;
 }
 
 export async function getLink(slug: string): Promise<LinkData | null> {
-  const raw = await redis.get<string>(`link:${slug}`);
-  if (!raw) return null;
-  return JSON.parse(raw);
+  try {
+    const raw = await redis.get<string>(`link:${slug}`);
+    if (!raw) {
+      console.log('⚠️ Link not found in Redis:', slug);
+      return null;
+    }
+    return JSON.parse(raw);
+  } catch (err: any) {
+    console.error('❌ Redis Error in getLink:', err.message);
+    return null;
+  }
 }
