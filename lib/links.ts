@@ -26,13 +26,15 @@ export async function createShortLink(
       const exists = await redis.exists(`link:${slug}`);
       if (exists) throw new Error('Slug already taken');
     } else {
-      while (await redis.exists(`link:${slug}`)) slug = nanoid(8);
+      while (await redis.exists(`link:${slug}`)) {
+        slug = nanoid(8);
+      }
     }
 
     const data: LinkData = { realUrl, preview };
     await redis.set(`link:${slug}`, JSON.stringify(data), { ex: 60 * 60 * 24 * 365 });
 
-    console.log('✅ REDIS SAVE SUCCESS:', slug, '→', realUrl);
+    console.log('✅ REDIS SAVE SUCCESS:', slug);
     return slug;
   } catch (err: any) {
     console.error('❌ REDIS SAVE FAILED:', err.message);
@@ -42,14 +44,18 @@ export async function createShortLink(
 
 export async function getLink(slug: string): Promise<LinkData | null> {
   try {
-    const raw = await redis.get<string>(`link:${slug}`);
+    const raw = await redis.get(`link:${slug}`);
+
     if (!raw) {
-      console.log('⚠️ Link not found:', slug);
+      console.log('⚠️ Link not found in Redis:', slug);
       return null;
     }
-    const data = JSON.parse(raw);
+
+    // Upstash kabhi string, kabhi object return karta hai
+    const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
     console.log('✅ REDIS GET SUCCESS:', slug);
-    return data;
+    return data as LinkData;
   } catch (err: any) {
     console.error('❌ REDIS GET ERROR:', err.message);
     return null;
