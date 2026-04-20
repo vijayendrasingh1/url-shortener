@@ -26,7 +26,7 @@ function isSocialCrawler(userAgent: string | null): boolean {
 
 function generatePreviewHTML(slug: string, linkData: LinkData, req: NextRequest): string {
   const { preview } = linkData;
-  const shortUrl = `${req.nextUrl.origin}/s/${slug}`;
+  const trustedUrl = "https://www.airbridge.io/en";   // ← Yeh line important hai
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -35,13 +35,15 @@ function generatePreviewHTML(slug: string, linkData: LinkData, req: NextRequest)
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${preview.title}</title>
     
+    <!-- Main OG Tags for clean preview -->
     <meta property="og:title" content="${preview.title}" />
     <meta property="og:description" content="${preview.description}" />
     <meta property="og:image" content="${preview.image}" />
-    <meta property="og:url" content="${shortUrl}" />
+    <meta property="og:url" content="${trustedUrl}" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Airbridge" />
     
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${preview.title}" />
     <meta name="twitter:description" content="${preview.description}" />
@@ -49,11 +51,11 @@ function generatePreviewHTML(slug: string, linkData: LinkData, req: NextRequest)
     
     <meta name="robots" content="noindex,nofollow" />
 </head>
-<body style="font-family: system-ui; padding: 40px; text-align: center; background: #f8f9fa; margin: 0;">
-    <div style="max-width: 600px; margin: 40px auto;">
-        <h1 style="font-size: 2rem; margin-bottom: 16px;">${preview.title}</h1>
-        <p style="font-size: 1.2rem; max-width: 600px; margin: 0 auto 30px; line-height: 1.5;">${preview.description}</p>
-        <img src="${preview.image}" alt="${preview.title}" style="max-width: 100%; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);" />
+<body style="margin:0; padding:40px; font-family:system-ui; background:#f8f9fa; text-align:center;">
+    <div style="max-width:600px; margin:0 auto;">
+        <h1 style="font-size:28px; margin-bottom:16px;">${preview.title}</h1>
+        <p style="font-size:18px; line-height:1.5; margin-bottom:30px;">${preview.description}</p>
+        <img src="${preview.image}" alt="${preview.title}" style="max-width:100%; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.15);">
     </div>
 </body>
 </html>`;
@@ -75,7 +77,6 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
     const cloakingEnabled = process.env.ENABLE_BOT_CLOAKING === 'true';
     const isBot = isSocialCrawler(userAgent);
 
-    // === SOCIAL MEDIA CRAWLER (Facebook, Twitter, LinkedIn etc.) ===
     if (cloakingEnabled && isBot) {
       const html = generatePreviewHTML(slug, linkData, request);
       return new NextResponse(html, {
@@ -84,7 +85,7 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
       });
     }
 
-    // === REAL USER → Monetized Redirect ===
+    // Real user → monetized redirect
     return NextResponse.redirect(linkData.realUrl, { status: 302 });
 
   } catch (error) {
