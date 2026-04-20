@@ -2,9 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getLink, type LinkData } from '@/lib/links';
 
 const BOT_USER_AGENTS = [
-  'facebookexternalhit', 'Facebot', 'twitterbot', 'X-Twitter',
-  'LinkedInBot', 'Slackbot', 'WhatsApp', 'TelegramBot',
-  'Discordbot', 'bot', 'crawler', 'preview', 'meta-externalagent'
+  'facebookexternalhit',
+  'Facebot',
+  'facebookcatalog',
+  'meta-externalagent',
+  'twitterbot',
+  'X-Twitter',
+  'LinkedInBot',
+  'Slackbot',
+  'WhatsApp',
+  'TelegramBot',
+  'Discordbot',
+  'bot',
+  'crawler',
+  'preview',
 ];
 
 function isSocialCrawler(userAgent: string | null): boolean {
@@ -23,26 +34,32 @@ function generatePreviewHTML(slug: string, linkData: LinkData, req: NextRequest)
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${preview.title}</title>
+    
     <meta property="og:title" content="${preview.title}" />
     <meta property="og:description" content="${preview.description}" />
     <meta property="og:image" content="${preview.image}" />
     <meta property="og:url" content="${shortUrl}" />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Airbridge" />
+    
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${preview.title}" />
     <meta name="twitter:description" content="${preview.description}" />
     <meta name="twitter:image" content="${preview.image}" />
+    
     <meta name="robots" content="noindex,nofollow" />
 </head>
-<body style="font-family: system-ui; padding: 40px; text-align: center; background: #f8f9fa;">
-    <h1 style="font-size: 2rem;">${preview.title}</h1>
-    <p style="font-size: 1.2rem; max-width: 600px; margin: 20px auto;">${preview.description}</p>
-    <img src="${preview.image}" alt="${preview.title}" style="max-width: 100%; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);" />
+<body style="font-family: system-ui; padding: 40px; text-align: center; background: #f8f9fa; margin: 0;">
+    <div style="max-width: 600px; margin: 40px auto;">
+        <h1 style="font-size: 2rem; margin-bottom: 16px;">${preview.title}</h1>
+        <p style="font-size: 1.2rem; max-width: 600px; margin: 0 auto 30px; line-height: 1.5;">${preview.description}</p>
+        <img src="${preview.image}" alt="${preview.title}" style="max-width: 100%; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);" />
+    </div>
 </body>
 </html>`;
 }
 
-export const dynamic = 'force-dynamic';   // ← Yeh line important hai
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
   try {
@@ -58,6 +75,7 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
     const cloakingEnabled = process.env.ENABLE_BOT_CLOAKING === 'true';
     const isBot = isSocialCrawler(userAgent);
 
+    // === SOCIAL MEDIA CRAWLER (Facebook, Twitter, LinkedIn etc.) ===
     if (cloakingEnabled && isBot) {
       const html = generatePreviewHTML(slug, linkData, request);
       return new NextResponse(html, {
@@ -66,12 +84,11 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
       });
     }
 
-    // Real user → monetized redirect
+    // === REAL USER → Monetized Redirect ===
     return NextResponse.redirect(linkData.realUrl, { status: 302 });
 
   } catch (error) {
-    console.error('Short link error:', error);
-    // Agar error aaye to homepage pe redirect kar do (user ko blank page na dikhe)
+    console.error('Route Error:', error);
     return NextResponse.redirect(new URL('/', request.url), { status: 302 });
   }
 }
