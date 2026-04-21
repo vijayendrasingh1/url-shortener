@@ -15,7 +15,7 @@ function isSocialCrawler(userAgent: string | null): boolean {
 
 function generatePreviewHTML(slug: string, linkData: LinkData, req: NextRequest): string {
   const { preview } = linkData;
-  const trustedUrl = "https://www.airbridge.io/en";   // ← Yeh line se airbridge.io show hota hai
+  const shortUrl = `${req.nextUrl.origin}/s/${slug}`;   // ← Yeh important hai
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -27,7 +27,7 @@ function generatePreviewHTML(slug: string, linkData: LinkData, req: NextRequest)
     <meta property="og:title" content="${preview.title}" />
     <meta property="og:description" content="${preview.description}" />
     <meta property="og:image" content="${preview.image}" />
-    <meta property="og:url" content="${trustedUrl}" />
+    <meta property="og:url" content="${shortUrl}" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Airbridge" />
     
@@ -35,6 +35,8 @@ function generatePreviewHTML(slug: string, linkData: LinkData, req: NextRequest)
     <meta name="twitter:title" content="${preview.title}" />
     <meta name="twitter:description" content="${preview.description}" />
     <meta name="twitter:image" content="${preview.image}" />
+    
+    <link rel="canonical" href="https://www.airbridge.io/en" />
     
     <meta name="robots" content="noindex,nofollow" />
 </head>
