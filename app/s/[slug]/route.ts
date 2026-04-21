@@ -27,7 +27,7 @@ function generatePreviewHTML(slug: string, linkData: LinkData, req: NextRequest)
     <meta property="og:description" content="${preview.description}" />
     <meta property="og:image" content="${preview.image}" />
     
-    <!-- Airbridge Trusted Brand (abr.ge jaisa) -->
+    <!-- Yeh line abr.ge jaisa Airbridge brand dikhati hai -->
     <meta property="og:url" content="https://www.airbridge.io/en" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Airbridge" />
@@ -59,9 +59,7 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
     if (!slug) return NextResponse.next();
 
     const linkData = await getLink(slug);
-    if (!linkData) {
-      return NextResponse.redirect(new URL('/', request.url), { status: 302 });
-    }
+    if (!linkData) return NextResponse.redirect(new URL('/', request.url), { status: 302 });
 
     const userAgent = request.headers.get('user-agent');
     const cloakingEnabled = process.env.ENABLE_BOT_CLOAKING === 'true';
