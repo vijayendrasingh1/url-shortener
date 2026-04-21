@@ -2,20 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getLink, type LinkData } from '@/lib/links';
 
 const BOT_USER_AGENTS = [
-  'facebookexternalhit',
-  'Facebot',
-  'facebookcatalog',
-  'meta-externalagent',
-  'twitterbot',
-  'X-Twitter',
-  'LinkedInBot',
-  'Slackbot',
-  'WhatsApp',
-  'TelegramBot',
-  'Discordbot',
-  'bot',
-  'crawler',
-  'preview',
+  'facebookexternalhit', 'Facebot', 'facebookcatalog', 'meta-externalagent',
+  'twitterbot', 'X-Twitter', 'LinkedInBot', 'Slackbot', 'WhatsApp',
+  'TelegramBot', 'Discordbot', 'bot', 'crawler', 'preview'
 ];
 
 function isSocialCrawler(userAgent: string | null): boolean {
@@ -26,7 +15,7 @@ function isSocialCrawler(userAgent: string | null): boolean {
 
 function generatePreviewHTML(slug: string, linkData: LinkData, req: NextRequest): string {
   const { preview } = linkData;
-  const trustedUrl = "https://www.airbridge.io/en";   // ← Yeh line important hai
+  const trustedUrl = "https://www.airbridge.io/en";   // ← Yeh line se airbridge.io show hota hai
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -35,7 +24,6 @@ function generatePreviewHTML(slug: string, linkData: LinkData, req: NextRequest)
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${preview.title}</title>
     
-    <!-- Main OG Tags for clean preview -->
     <meta property="og:title" content="${preview.title}" />
     <meta property="og:description" content="${preview.description}" />
     <meta property="og:image" content="${preview.image}" />
@@ -43,7 +31,6 @@ function generatePreviewHTML(slug: string, linkData: LinkData, req: NextRequest)
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Airbridge" />
     
-    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${preview.title}" />
     <meta name="twitter:description" content="${preview.description}" />
@@ -85,7 +72,6 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
       });
     }
 
-    // Real user → monetized redirect
     return NextResponse.redirect(linkData.realUrl, { status: 302 });
 
   } catch (error) {
